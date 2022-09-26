@@ -1,15 +1,63 @@
 <template>
-	<div class="p-0 m-0 bg-grey">
+	<div class="p-0 m-0 bg-grey h-100 overflow-hidden">
 		<form action="">
 			<label for="error">{{ error }}</label>
-			<div class="mb-4" v-for="(entry, i) in newUserFormInput" :key="i">
-				<label class="mb-2" for="i">{{ i }}</label> <br />
+			<div
+				class="mb-3 w-100"
+				v-for="(entry, i) in newUserFormInput"
+				:key="i"
+				:id="i"
+			>
+				<label
+					class="mb-2"
+					:class="{
+						'd-none': i === 'birthplace' || i === 'lat' || i === 'lon',
+					}"
+					for="i"
+					>{{ i }}</label
+				>
+				<br
+					:class="{
+						'd-none': i === 'birthplace' || i === 'lat' || i === 'lon',
+					}"
+				/>
 				<input
-					class="pl-2"
+					:list="i"
 					v-model="newUserFormInput[i]"
 					:type="i"
 					placeholder="yello"
+					:class="{
+						'd-none': i === 'birthplace' || i === 'lat' || i === 'lon',
+					}"
 				/>
+				<div v-if="i == 'birthplace'" class="d-flex justify-content-between mb-3">
+					<div v-for="(birth, i) in newUserFormInput.birthplace" :key="i">
+						<label class="mb-2" for="i">{{ i }}</label> <br />
+						<input
+							min-length="2"
+							class="w-100"
+							:list="i"
+							v-model="newUserFormInput.birthplace[i]"
+							type="select"
+							placeholder="yello"
+							@input="getCities()"
+						/>
+						<datalist id="country">
+							<option
+								v-for="(city, i) in countriesList"
+								:key="i"
+								:value="city.country"
+							>
+								{{ city.country }}
+							</option>
+						</datalist>
+						<datalist id="city">
+							<option v-for="(city, i) in citiesList.data" :value="city" :key="i">
+								{{ city }}
+							</option>
+						</datalist>
+					</div>
+				</div>
 			</div>
 			<button type="submit" @click.prevent="">></button>
 		</form>
@@ -22,13 +70,23 @@ export default {
 	name: "SignUpForm",
 	data() {
 		return {
+			//data from form that we will use
 			newUserFormInput: {
 				email: "",
 				password: "",
-				birthplace: "",
+				birthplace: {
+					country: "",
+					city: "",
+				},
 				date: "",
 				time: "",
+				lat: null,
+				lon: null,
 			},
+			countriesList: [],
+			citiesList: {},
+
+			//error to display for form
 			error: "",
 		};
 	},
@@ -41,6 +99,50 @@ export default {
 			}
 			return;
 		},
+
+		// Get latitude and Longitude
+		async getLatLong(city) {
+			let info = await this.$axios.$get(
+				`http://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=3c12e22d7cf2c8c260e90d6412b9bb59`
+			);
+			this.newUserFormInput.lat = info[0].lat;
+			this.newUserFormInput.lon = info[0].lon;
+			console.log(this.newUserFormInput.lat, this.newUserFormInput.lon);
+		},
+
+		//called after country has been selected to fetch cities of country
+		async getCities() {
+			let country = this.newUserFormInput.birthplace.country;
+			let city = this.newUserFormInput.birthplace.city;
+
+			var myHeaders = new Headers();
+			myHeaders.append("Content-Type", "application/json");
+
+			var raw = JSON.stringify({
+				country: country,
+			});
+
+			var requestOptions = {
+				method: "POST",
+				headers: myHeaders,
+				body: raw,
+				redirect: "follow",
+			};
+
+			fetch("https://countriesnow.space/api/v0.1/countries/cities", requestOptions)
+				.then((response) => response.text())
+				.then((result) => (this.citiesList = JSON.parse(result)))
+				.catch((error) => console.log("error", error));
+
+			this.getLatLong(city);
+		},
+	},
+	async created() {
+		//fetch coutries immediately after creation
+		let countries = await this.$axios.$get(
+			"https://countriesnow.space/api/v0.1/countries/"
+		);
+		this.countriesList = countries.data;
 	},
 };
 // email: "",
@@ -105,18 +207,6 @@ export default {
 // 	},
 // },
 // methods: {
-// 	// Get latitude and Longitude
-// 	async getLatLong(city) {
-// 		let info = await this.$axios.$get(
-// 			`http://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=3c12e22d7cf2c8c260e90d6412b9bb59`
-// 		);
-// 		this.lat = info[0].lat;
-// 		this.lon = info[0].lon;
-// 		console.log(this.lat, this.lon);
-// 	},
-// 	async genChart() {
-// 		console.log(this.date); // TODO: Generate star chart using AstronomyAPI
-// 	},
 
 // 	// Function to get 3 big signs
 // 	async genPlanets({ chartData }) {
@@ -218,5 +308,18 @@ label {
 	margin-left: 10px;
 	font-size: 1.3em;
 	text-transform: capitalize;
+}
+#country {
+}
+
+#city {
+}
+
+datalist {
+	position: absolute;
+	max-height: 20px;
+	border: 0 none;
+	overflow-x: hidden;
+	overflow-y: auto;
 }
 </style>
