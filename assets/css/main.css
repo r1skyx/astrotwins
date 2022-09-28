@@ -1,71 +1,81 @@
 /* FONTS */
 
-@import url('https://fonts.googleapis.com/css2?family=Dosis:wght@300;400;500;600&family=Noto+Serif&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Dosis:wght@300;400;500;600&family=Noto+Serif&display=swap");
 
 a {
-    color:inherit;
+	color: inherit;
 }
 
 img {
-    width: 100%;
+	width: 100%;
 }
 
 /* COLORS */
 
 :root {
-    --gold: #F2E2C1;
-    --bg-grey:#2E2E30;
-    --secondary-grey:#BFBFBF;
-    --button-black:#332F26;
+	--gold: #f2e2c1;
+	--bg-grey: #2e2e30;
+	--secondary-grey: #bfbfbf;
+	--button-black: #332f26;
 }
 
 .bg-grey {
-    background-color: var(--bg-grey);
+	background-color: var(--bg-grey);
 }
 
-.bg-gold{
-    background-color: var(--gold);
+.bg-gold {
+	background-color: var(--gold);
 }
 
 .text-gold {
-    color:var(--gold);
+	color: var(--gold);
 }
 
 .text-secondary {
-    color: var(--secondary-grey);
+	color: var(--secondary-grey);
 }
 
 /* TYPOGRAPHY */
 * {
-    font-size: 1.0em;
-    font-family: 'Dosis' , sans-serif;
-    color: white;
+	font-size: 1em;
+	font-family: "Dosis", sans-serif;
+	color: white;
 }
 
 p {
-    font-size: 0.1em;
+	font-size: 0.1em;
 }
 
 .fw-300 {
-    font-weight: 300;
+	font-weight: 300;
 }
 
 .fw-400 {
-    font-weight: 400;
+	font-weight: 400;
 }
 
 .btn-primary {
-    background-color: var(--button-black);
-    border-color: var(--gold);
-    font-size: 1.4em;
-    width: 200px;
-    height: 50px;
+	background-color: var(--button-black);
+	border-color: var(--gold);
+	font-size: 1.4em;
+	width: 200px;
+	height: 50px;
 }
 
 input {
-    font-size: 1.2rem;
-    background-color: var(--bg-grey);
-    border: 1px solid var(--gold);
-    width: 100vw;
-    height: 2.7rem;
+	font-size: 1.2rem;
+	padding: 10px;
+	background-color: var(--bg-grey);
+	border-color: var(--gold);
+	border-style: solid;
+	border-top: 1px solid var(--gold);
+	border-bottom: 1px solid var(--gold);
+	border-left: none;
+	border-right: none;
+	width: 100vw;
+	height: 2.7rem;
+}
+
+input:focus {
+	outline: none;
 }

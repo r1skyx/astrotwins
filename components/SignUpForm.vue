@@ -1,5 +1,5 @@
 <template>
-	<div class="p-0 m-0 bg-grey h-100 overflow-hidden">
+	<div class="p-0 m-0 h-100">
 		<form action="">
 			<label for="error">{{ error }}</label>
 			<div
@@ -25,7 +25,6 @@
 					:list="i"
 					v-model="newUserFormInput[i]"
 					:type="i"
-					placeholder="yello"
 					:class="{
 						'd-none': i === 'birthplace' || i === 'lat' || i === 'lon',
 					}"
@@ -34,13 +33,12 @@
 					<div v-for="(birth, i) in newUserFormInput.birthplace" :key="i">
 						<label class="mb-2" for="i">{{ i }}</label> <br />
 						<input
-							min-length="2"
-							class="w-100"
+							class="px-1 my-width"
 							:list="i"
 							v-model="newUserFormInput.birthplace[i]"
 							type="select"
-							placeholder="yello"
-							@input="getCities()"
+							@keyup.delete="handleDelete()"
+							@keydown="handleInput($event)"
 						/>
 						<datalist id="country">
 							<option
@@ -59,7 +57,9 @@
 					</div>
 				</div>
 			</div>
-			<button type="submit" @click.prevent="">></button>
+			<button type="submit" @click.prevent="checkForEmptyFields(newUserFormInput)">
+				>
+			</button>
 		</form>
 	</div>
 </template>
@@ -90,6 +90,38 @@ export default {
 			error: "",
 		};
 	},
+	computed: {
+		dateAndTime() {
+			let computedDate = this.$moment(
+				new Date(this.newUserFormInput.date + " " + this.newUserFormInput.time)
+			).format("YYYY-MM-DDTHH:mm");
+			console.log(computedDate);
+			return computedDate;
+		},
+
+		dataForSignsReq() {
+			let data = this.newUserFormInput;
+			if (
+				this.checkForEmptyFields(data) ||
+				this.checkForEmptyFields(data.birthplace)
+			) {
+				throw new Error("Empty fields");
+			}
+
+			let date = this.turnDateToJSObj(this.dateAndTime);
+
+			data = {
+				latitude: data.lat,
+				longitude: data.lon,
+				year: date.getFullYear,
+				month: date.getMonth,
+				day: date.getDay,
+				hour: date.getHours,
+			};
+
+			return data;
+		},
+	},
 	methods: {
 		validateEmail(email) {
 			if (!validator.validate(email)) {
@@ -100,18 +132,70 @@ export default {
 			return;
 		},
 
+		turnDateToJSObj(date) {
+			return new Date(this.date);
+		},
+
+		//use it to check if we have empty fields in form
+		checkForEmptyFields(obj) {
+			for (let key in obj) {
+				if (!obj[key]) {
+					this.error = "Empty fields";
+					return false;
+				}
+			}
+			this.error = "";
+			return true;
+		},
+
+		checkIfCityIsInList(city) {
+			for (let key in this.citiesList) {
+				if (city === this.citiesList[key]);
+				else {
+					return false;
+				}
+			}
+			return true;
+		},
+
 		// Get latitude and Longitude
 		async getLatLong(city) {
+			if (this.checkIfCityIsInList(city)) {
+				return false;
+			}
+
 			let info = await this.$axios.$get(
-				`http://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=3c12e22d7cf2c8c260e90d6412b9bb59`
+				`http://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=${process.env.OPENWEATHER_MAP_KEY}`
 			);
 			this.newUserFormInput.lat = info[0].lat;
 			this.newUserFormInput.lon = info[0].lon;
 			console.log(this.newUserFormInput.lat, this.newUserFormInput.lon);
 		},
 
-		//called after country has been selected to fetch cities of country
-		async getCities() {
+		//get timezone from lat and long
+		async timeZone() {
+			let timezone = await this.$axios.$get(
+				`https://api.bigdatacloud.net/data/reverse-geocode-with-timezone?latitude=${this.newUserFormInput.lat}&longitude=${this.newUserFormInput.lon}&localityLanguage=en&key=${process.env.BIG_DATA_CLOUD_KEY}`
+			);
+			//timezone is given in secs and we transform to num of hours
+			console.log(timezone.timeZone.utcOffsetSeconds / 3600);
+			return timezone;
+		},
+
+		handleInput(e) {
+			if (e.key === "Backspace" || e.key === "Delete") {
+				return;
+			} else {
+				this.getCitiesLatLonAndTzone();
+			}
+		},
+
+		handleDelete() {
+			return;
+		},
+
+		//called after country has been selected to fetch cities of country, then call the lat/lon func and  timezone func, then stores them in data
+		async getCitiesLatLonAndTzone() {
 			let country = this.newUserFormInput.birthplace.country;
 			let city = this.newUserFormInput.birthplace.city;
 
@@ -129,12 +213,20 @@ export default {
 				redirect: "follow",
 			};
 
-			fetch("https://countriesnow.space/api/v0.1/countries/cities", requestOptions)
-				.then((response) => response.text())
-				.then((result) => (this.citiesList = JSON.parse(result)))
-				.catch((error) => console.log("error", error));
+			if (country) {
+				fetch(
+					"https://countriesnow.space/api/v0.1/countries/cities",
+					requestOptions
+				)
+					.then((response) => response.text())
+					.then((result) => (this.citiesList = JSON.parse(result)))
+					.catch((error) => console.log("error", error));
 
-			this.getLatLong(city);
+				if (city) {
+					await this.getLatLong(city);
+					this.timeZone();
+				}
+			}
 		},
 	},
 	async created() {
@@ -321,5 +413,9 @@ datalist {
 	border: 0 none;
 	overflow-x: hidden;
 	overflow-y: auto;
+}
+
+.my-width {
+	max-width: 47vw;
 }
 </style>

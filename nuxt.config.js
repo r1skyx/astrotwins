@@ -70,6 +70,7 @@ export default {
 				},
 			},
 		],
+		"@nuxtjs/dotenv",
 	],
 
 	// Build Configuration: https://go.nuxtjs.dev/config-build
