@@ -16,7 +16,7 @@ export default {
 	},
 
 	// Global CSS: https://go.nuxtjs.dev/config-css
-	css: ["@/assets/css/main.css"],
+	css: ["@/assets/css/main.css", "vue-search-select/dist/VueSearchSelect.css"],
 
 	// Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
 	plugins: [{ src: "~/plugins/vuex-persist", ssr: false }, "plugins/axios.js"],

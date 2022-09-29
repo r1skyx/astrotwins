@@ -79,3 +79,34 @@ input {
 input:focus {
 	outline: none;
 }
+
+body {
+	background-color: #2e2e30;
+}
+
+.ui.dropdown,
+.ui.dropdown input {
+	background-color: black;
+}
+
+.ui.search.dropdown > input.search {
+	background-color: #2e2e30 !important;
+}
+
+.input {
+	font-size: 1.2rem;
+	padding: 10px;
+	background-color: var(--bg-grey);
+	border-color: var(--gold);
+	border-style: solid;
+	border-top: 1px solid var(--gold);
+	border-bottom: 1px solid var(--gold);
+	border-left: none;
+	border-right: none;
+	width: 100vw;
+	height: 2.7rem;
+}
+
+.ui.search.dropdown > .text {
+	padding-left: 10px;
+}

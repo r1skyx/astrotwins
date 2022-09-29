@@ -1,29 +1,27 @@
 <template>
-	<div>
-		<b-container class="p-0 m-0 vw-100" fluid>
-			<b-row cols="12" class="text-center">
-				<img src="../assets/images/index-pic.png" class="p-0 m-n mx-auto" alt="" />
-				<b-col class="text-center mx-auto">
-					<h1>Astro<span>twins</span></h1>
-					<h4 class="mx-auto mt-4 text-secondary">
-						Find and connect with your astrological twins
-					</h4>
-					<img class="sun mt-4" src="../assets/images/sun-index.png" alt="" />
-					<h4 class="mx-auto mt-4 mb-5">
-						<b>Chat</b> with people who have the same <b>3 big signs</b> as you!
-					</h4>
-					<hr />
-					<h4 class="mx-auto">GET STARTED</h4>
-					<nuxt-link to="/sign-up"
-						><button class="btn-primary mb-3">SIGN UP</button></nuxt-link
-					>
-					<nuxt-link to="/log-in"
-						><h4 class="mx-auto log-in text-gold">LOG IN</h4></nuxt-link
-					>
-				</b-col>
-			</b-row>
-		</b-container>
-	</div>
+	<b-container class="p-0 m-auto h-100 w-100" fluid>
+		<b-row cols="12" class="text-center m-0">
+			<img src="../assets/images/index-pic.png" class="p-0 m-n mx-auto" alt="" />
+			<b-col class="text-center mx-auto w-100 p-0">
+				<h1>Astro<span>twins</span></h1>
+				<h4 class="mx-auto mt-4 text-secondary">
+					Find and connect with your astrological twins
+				</h4>
+				<img class="sun mt-4" src="../assets/images/sun-index.png" alt="" />
+				<h4 class="mx-auto mt-4 mb-5">
+					<b>Chat</b> with people who have the same <b>3 big signs</b> as you!
+				</h4>
+				<hr />
+				<h4 class="mx-auto">GET STARTED</h4>
+				<nuxt-link to="/sign-up"
+					><button class="btn-primary mb-3">SIGN UP</button></nuxt-link
+				>
+				<nuxt-link to="/log-in"
+					><h4 class="mx-auto log-in text-gold">LOG IN</h4></nuxt-link
+				>
+			</b-col>
+		</b-row>
+	</b-container>
 </template>
 
 <style scoped>

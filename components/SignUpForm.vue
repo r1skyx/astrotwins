@@ -1,5 +1,5 @@
 <template>
-	<div class="p-0 m-0 h-100">
+	<div class="p-0 m-0 h-100 w-100">
 		<form action="">
 			<label for="error">{{ error }}</label>
 			<div
@@ -29,32 +29,31 @@
 						'd-none': i === 'birthplace' || i === 'lat' || i === 'lon',
 					}"
 				/>
-				<div v-if="i == 'birthplace'" class="d-flex justify-content-between mb-3">
-					<div v-for="(birth, i) in newUserFormInput.birthplace" :key="i">
-						<label class="mb-2" for="i">{{ i }}</label> <br />
-						<input
-							class="px-1 my-width"
-							:list="i"
-							v-model="newUserFormInput.birthplace[i]"
-							type="select"
-							@keyup.delete="handleDelete()"
-							@keydown="handleInput($event)"
-						/>
-						<datalist id="country">
-							<option
-								v-for="(city, i) in countriesList"
-								:key="i"
-								:value="city.country"
-							>
-								{{ city.country }}
-							</option>
-						</datalist>
-						<datalist id="city">
-							<option v-for="(city, i) in citiesList.data" :value="city" :key="i">
-								{{ city }}
-							</option>
-						</datalist>
-					</div>
+			</div>
+			<div class="d-flex justify-content-between mt-3">
+				<div class="w-100">
+					<label for="country">Country</label>
+					<model-select
+						class="modelSelect"
+						v-model="newUserFormInput.birthplace.country"
+						:options="countriesList"
+						placeholder="Select Country"
+						@select="getCitiesFromCountry()"
+						@input="getCitiesFromCountry()"
+					>
+					</model-select>
+				</div>
+				<div class="w-100">
+					<label for="country">City</label>
+					<model-select
+						class="modelSelect"
+						v-model="newUserFormInput.birthplace.city"
+						:options="citiesList"
+						placeholder="Select City"
+						@select="getCitiesLatLonAndTzone()"
+						@input="getCitiesLatLonAndTzone()"
+					>
+					</model-select>
 				</div>
 			</div>
 			<button type="submit" @click.prevent="checkForEmptyFields(newUserFormInput)">
@@ -66,8 +65,10 @@
 
 <script>
 let validator = require("email-validator");
+import { ModelSelect } from "vue-search-select";
 export default {
 	name: "SignUpForm",
+	components: { ModelSelect },
 	data() {
 		return {
 			//data from form that we will use
@@ -84,7 +85,12 @@ export default {
 				lon: null,
 			},
 			countriesList: [],
-			citiesList: {},
+			citiesList: [
+				{
+					value: null,
+					text: "Pick country first",
+				},
+			],
 
 			//error to display for form
 			error: "",
@@ -148,6 +154,27 @@ export default {
 			return true;
 		},
 
+		async getCitiesFromCountry() {
+			let countries = await this.$axios.$get(
+				"https://countriesnow.space/api/v0.1/countries/"
+			);
+			let finalFormatArrayCities = [];
+			let countriesList = countries.data;
+			countriesList.forEach((country) => {
+				if (country.country == this.newUserFormInput.birthplace.country) {
+					let cities = country.cities;
+					for (let i = 0; i < cities.length; i++) {
+						let city = {
+							value: cities[i],
+							text: cities[i],
+						};
+						finalFormatArrayCities.push(city);
+					}
+				}
+				this.citiesList = finalFormatArrayCities;
+			});
+		},
+
 		checkIfCityIsInList(city) {
 			for (let key in this.citiesList) {
 				if (city === this.citiesList[key]);
@@ -160,9 +187,9 @@ export default {
 
 		// Get latitude and Longitude
 		async getLatLong(city) {
-			if (this.checkIfCityIsInList(city)) {
-				return false;
-			}
+			// if (this.checkIfCityIsInList(city)) {
+			// 	return false;
+			// }
 
 			let info = await this.$axios.$get(
 				`http://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=${process.env.OPENWEATHER_MAP_KEY}`
@@ -182,50 +209,13 @@ export default {
 			return timezone;
 		},
 
-		handleInput(e) {
-			if (e.key === "Backspace" || e.key === "Delete") {
-				return;
-			} else {
-				this.getCitiesLatLonAndTzone();
-			}
-		},
-
-		handleDelete() {
-			return;
-		},
-
 		//called after country has been selected to fetch cities of country, then call the lat/lon func and  timezone func, then stores them in data
 		async getCitiesLatLonAndTzone() {
 			let country = this.newUserFormInput.birthplace.country;
 			let city = this.newUserFormInput.birthplace.city;
-
-			var myHeaders = new Headers();
-			myHeaders.append("Content-Type", "application/json");
-
-			var raw = JSON.stringify({
-				country: country,
-			});
-
-			var requestOptions = {
-				method: "POST",
-				headers: myHeaders,
-				body: raw,
-				redirect: "follow",
-			};
-
-			if (country) {
-				fetch(
-					"https://countriesnow.space/api/v0.1/countries/cities",
-					requestOptions
-				)
-					.then((response) => response.text())
-					.then((result) => (this.citiesList = JSON.parse(result)))
-					.catch((error) => console.log("error", error));
-
-				if (city) {
-					await this.getLatLong(city);
-					this.timeZone();
-				}
+			if (city) {
+				await this.getLatLong(city);
+				this.timeZone();
 			}
 		},
 	},
@@ -234,7 +224,17 @@ export default {
 		let countries = await this.$axios.$get(
 			"https://countriesnow.space/api/v0.1/countries/"
 		);
-		this.countriesList = countries.data;
+		let finalFormatArray = [];
+		let countriesList = [];
+		countriesList = countries.data;
+		countriesList.forEach((country) => {
+			let countryValue = {
+				value: country.country,
+				text: country.country,
+			};
+			finalFormatArray.push(countryValue);
+		});
+		this.countriesList = finalFormatArray;
 	},
 };
 // email: "",
@@ -401,10 +401,14 @@ label {
 	font-size: 1.3em;
 	text-transform: capitalize;
 }
-#country {
+
+.modelSelect {
+	padding: 10px !important;
+	border: 0 !important;
 }
 
-#city {
+input .search {
+	padding: 10px !important;
 }
 
 datalist {
