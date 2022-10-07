@@ -56,9 +56,7 @@
 					</model-select>
 				</div>
 			</div>
-			<button type="submit" @click.prevent="checkForEmptyFields(newUserFormInput)">
-				>
-			</button>
+			<button type="submit" @click.prevent="submit">></button>
 		</form>
 	</div>
 </template>
@@ -73,6 +71,7 @@ export default {
 		return {
 			//data from form that we will use
 			newUserFormInput: {
+				username: "",
 				email: "",
 				password: "",
 				birthplace: {
@@ -84,6 +83,7 @@ export default {
 				lat: null,
 				lon: null,
 			},
+			signs: {},
 			countriesList: [],
 			citiesList: [
 				{
@@ -103,29 +103,6 @@ export default {
 			).format("YYYY-MM-DDTHH:mm");
 			console.log(computedDate);
 			return computedDate;
-		},
-
-		dataForSignsReq() {
-			let data = this.newUserFormInput;
-			if (
-				this.checkForEmptyFields(data) ||
-				this.checkForEmptyFields(data.birthplace)
-			) {
-				throw new Error("Empty fields");
-			}
-
-			let date = this.turnDateToJSObj(this.dateAndTime);
-
-			data = {
-				latitude: data.lat,
-				longitude: data.lon,
-				year: date.getFullYear,
-				month: date.getMonth,
-				day: date.getDay,
-				hour: date.getHours,
-			};
-
-			return data;
 		},
 	},
 	methods: {
@@ -174,17 +151,6 @@ export default {
 				this.citiesList = finalFormatArrayCities;
 			});
 		},
-
-		checkIfCityIsInList(city) {
-			for (let key in this.citiesList) {
-				if (city === this.citiesList[key]);
-				else {
-					return false;
-				}
-			}
-			return true;
-		},
-
 		// Get latitude and Longitude
 		async getLatLong(city) {
 			// if (this.checkIfCityIsInList(city)) {
@@ -218,6 +184,100 @@ export default {
 				this.timeZone();
 			}
 		},
+
+		dataForSignsReq() {
+			let data = this.newUserFormInput;
+			if (
+				!this.checkForEmptyFields(data) ||
+				!this.checkForEmptyFields(data.birthplace)
+			) {
+				this.error = "Empty fields";
+				return;
+			}
+
+			let date = new Date(this.dateAndTime);
+
+			let reqData = {
+				latitude: data.lat,
+				longitude: data.lon,
+				year: date.getFullYear(),
+				month: date.getMonth() + 1,
+				day: date.getDate(),
+				hour: date.getHours(),
+			};
+			console.log(reqData);
+			return reqData;
+		},
+		//Function to get 3 big signs
+		async genPlanets() {
+			//Get the information for the signs
+			let data = this.dataForSignsReq();
+			console.log(data);
+			this.$axios.setHeader("allow", process.env.SIGNS_API_KEY);
+			let signs = await this.$axios.$get(
+				`http://localhost:8000/api/signs-calculator?latitude=${data.latitude}&longitude=${data.longitude}&year=${data.year}&month=${data.month}&day=${data.day}&hour=${data.hour}`
+			);
+			console.log(signs);
+			this.signs = signs;
+		},
+
+		//
+		async firebaseAuth() {
+			try {
+				await this.$fire.auth.createUserWithEmailAndPassword(
+					this.newUserFormInput.email,
+					this.newUserFormInput.password
+				);
+			} catch (e) {
+				//error handling
+				let errorCode = e.code;
+				console.log(errorCode);
+				if (errorCode === "auth/email-already-in-use") {
+					this.error = "Email already in use";
+				} else if (errorCode === "weak-password") {
+					this.error = "The password must be 6 characters long or more.";
+				} else if (errorCode === "user-mismatch") {
+					this.error = "User credentials do not match";
+				} else if (errorCode === "wrong-password") {
+					this.error = "The password is invalid";
+				}
+			}
+			console.log("registration complete!");
+		},
+
+		postData() {
+			let data = {
+				dateCreated: Date.now(),
+				birthday: new Date(this.dateAndTime),
+				username: this.newUserFormInput.username,
+				email: this.newUserFormInput.email,
+				sunsign: this.signs.sun,
+				moonsign: this.signs.moon,
+				ascendsign: this.signs.ascending,
+				firebaseUID: this.$fire.auth.currentUser.uid,
+			};
+
+			return data;
+		},
+		async dbPost() {
+			let data = this.postData();
+			const params = new URLSearchParams();
+			for (let field in data) {
+				params.append(field, data[field]);
+			}
+			let url = process.env.BACKEND_URL;
+			let res = await this.$axios.$post(`${url}/signup`, params);
+			console.log(res);
+		},
+
+		async submit() {
+			await this.genPlanets();
+			await this.firebaseAuth();
+			await this.dbPost();
+			let userData = this.postData();
+			this.$store.commit("addUserData", userData);
+			this.$router.push("/");
+		},
 	},
 	async created() {
 		//fetch coutries immediately after creation
@@ -237,152 +297,6 @@ export default {
 		this.countriesList = finalFormatArray;
 	},
 };
-// email: "",
-// password: "",
-// id: this.$store.state.id, // Used to know if there is info. If there isn't, display form.
-// city: "",
-// lat: "",
-// lon: "",
-// dateInput: "", // To get date as Date object
-// timeInput: "", // To get time as Date object
-// //signs
-// sunSign: "",
-// moonSign: "",
-// ascendSign: "",
-// authError: "",
-// computed: {
-// 	hash() {
-// 		return this.$store.state.hash; //api hash for star chart astronomy api
-// 	},
-
-// 	//to get lat and lon into chartData
-// 	lati() {
-// 		return this.lat;
-// 	},
-
-// 	longi() {
-// 		return this.lon;
-// 	},
-
-// 	chartData() {
-// 		return {
-// 			day: this.date.getDate(),
-// 			month: Number(this.date.getMonth() + 1),
-// 			year: this.date.getFullYear(),
-// 			hour: this.time.getHours(),
-// 			min: this.time.getMinutes(),
-// 			lat: this.lati,
-// 			lon: this.longi,
-// 			tzone: 1, // TODO : Find timezone based on location
-// 		};
-// 	},
-
-// 	dbData() {
-// 		return {
-// 			email: this.email,
-// 			birthdate: this.$moment(
-// 				new Date(this.dateInput + " " + this.timeInput)
-// 			).format("YYYY-MM-DD HH:mm:ss"),
-// 			sunsign: this.sunSign,
-// 			moonsign: this.moonSign,
-// 			ascendsign: this.ascendSign,
-// 		};
-// 	},
-
-// 	// Get date and time
-// 	date() {
-// 		return new Date(this.dateInput);
-// 	},
-
-// 	time() {
-// 		return new Date(this.dateInput + " " + this.timeInput);
-// 	},
-// },
-// methods: {
-
-// 	// Function to get 3 big signs
-// 	async genPlanets({ chartData }) {
-// 		await this.getLatLong(this.city); // wait until we have lat/lon
-// 		console.log(this.lat);
-
-// 		//hash stuff to access API
-// 		let userId = "620618";
-// 		let apiKey = "c88a4897f3e61fe2d5e7149577f6b54a";
-// 		let hashStr = `${userId}:${apiKey}`;
-// 		let hashGen = Buffer.from(hashStr, "utf8").toString("base64");
-// 		console.log(hashGen);
-
-// 		//Header configs
-// 		let config = {
-// 			headers: {
-// 				authorization: "Basic " + hashGen,
-// 			},
-// 		};
-// 		console.log(this.chartData);
-
-// 		//Get the information for the signs
-// 		let planetInfo = await this.$axios.$post(
-// 			`https://json.astrologyapi.com/v1/planets/tropical`,
-// 			this.chartData,
-// 			config
-// 		);
-// 		console.log(planetInfo);
-// 		this.sunSign = planetInfo[0].sign;
-// 		this.moonSign = planetInfo[1].sign;
-// 		this.ascendSign = planetInfo[10].sign;
-
-// 		//change ID in store so that the form doesnt show
-// 		//this.$store.commit('addId');
-// 		//this.id = this.$store.state.id;
-// 	},
-
-// 	//Action for submit button
-// 	async submit() {
-// 		//generate chart signs
-// 		await this.genPlanets(this.chartData);
-
-// 		//firebase auth user creation
-// 		try {
-// 			await this.$fire.auth.createUserWithEmailAndPassword(
-// 				this.email,
-// 				this.password
-// 			);
-// 			try {
-// 				let config = {
-// 					headers: { "Access-Control-Allow-Origin": "*" },
-// 				};
-// 				let res = await this.$axios.$post(
-// 					`http://localhost:8001/api/signup`,
-// 					this.dbData,
-// 					config
-// 				);
-// 				let userData = res[0];
-// 				console.log(userData);
-// 				this.$store.commit("addUserData", userData);
-// 				this.$router.push("/");
-// 			} catch (e) {
-// 				console.log(e);
-// 				throw error;
-// 			}
-// 		} catch (e) {
-// 			//error handling
-// 			let errorCode = e.code;
-// 			console.log(errorCode);
-// 			if (errorCode === "auth/email-already-in-use") {
-// 				this.authError = "Email already in use";
-// 			} else if (errorCode === "weak-password") {
-// 				this.authError = "The password must be 6 characters long or more.";
-// 			} else if (errorCode === "user-mismatch") {
-// 				this.authError = "User credentials do not match";
-// 			} else if (errorCode === "wrong-password") {
-// 				this.authError = "The password is invalid";
-// 			}
-// 		}
-// 		console.log("registration complete!");
-// 	},
-// },
-// created() {
-// 	this.$store.commit("buildHash");
 </script>
 
 <style scoped>

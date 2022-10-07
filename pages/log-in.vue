@@ -32,7 +32,7 @@
 						id=""
 					/>
 				</div>
-				<button type="submit" @click.prevent="submit">></button>
+				<button type="submit" @click.prevent="final">></button>
 			</form>
 		</b-container>
 	</div>
@@ -47,33 +47,15 @@ export default {
 		return {
 			email: "",
 			password: "",
-			id: this.$store.state.id, // Used to know if there is info. If there isn't, display form.
 			authError: "",
 		};
 	},
 	methods: {
 		//Action for submit button
 		async submit() {
-			//firebase auth user creation
+			//firebase auth user
 			try {
 				await this.$fire.auth.signInWithEmailAndPassword(this.email, this.password);
-				try {
-					let config = {
-						headers: { "Access-Control-Allow-Origin": "*" },
-					};
-					let email = this.email;
-					let res = await this.$axios.$get(
-						`http://localhost:8001/api/${email}`,
-						config
-					);
-					let userData = res[0];
-					console.log(userData);
-					this.$store.commit("addUserData", userData);
-					this.$router.push("/");
-				} catch (e) {
-					console.log(e);
-					throw error;
-				}
 			} catch (e) {
 				//error handling
 				let errorCode = e.code;
@@ -93,11 +75,45 @@ export default {
 					this.authError = e.message;
 				}
 			}
-			console.log("registration complete!");
+		},
+
+		async authorize() {
+			try {
+				let url = process.env.BACKEND_URL;
+
+				let res = await this.$axios.$post(`${url}/login`, user);
+				let id = this.$fire.auth.currentUser.uid;
+				console.log(id);
+				let user = {
+					firebaseUID: id,
+				};
+				console.log(res);
+				let headers = {
+					headers: {
+						Authorization: `Bearer ${res.accessToken}`,
+					},
+				};
+				let userData = await this.$axios.$get(`${url}/users/${id}`, headers);
+				console.log(userData);
+				this.$router.push("/");
+			} catch (e) {
+				console.log(e);
+				throw error;
+			}
+		},
+
+		final() {
+			this.submit();
+			setTimeout(() => {
+				this.authorize();
+			}, 1000);
 		},
 	},
 	created() {
-		this.$store.commit("buildHash");
+		if (this.id) {
+			this.$router.push("/");
+			return;
+		}
 	},
 };
 </script>

@@ -36,6 +36,7 @@ export default {
 <style scoped>
 .linear-black {
 	padding: 0;
+	margin: 0;
 	width: 100vw;
 	height: 110px;
 	background: linear-gradient(

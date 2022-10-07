@@ -71,6 +71,7 @@ export default {
 			},
 		],
 		"@nuxtjs/dotenv",
+		"cookie-universal-nuxt",
 	],
 
 	// Build Configuration: https://go.nuxtjs.dev/config-build
