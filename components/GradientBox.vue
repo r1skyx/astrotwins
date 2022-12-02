@@ -3,8 +3,15 @@
 		<b-container class="d-flex linear-black" fluid>
 			<b-row align-v="center" align-h="center" class="linear-black negative">
 				<b-col cols="2">
-					<nuxt-link :to="'/' + linkTo"
-						><h1 class="ml-3 text-gold negative">{{ backArrow }}</h1></nuxt-link
+					<a
+						@click="
+							() => {
+								this.$router.go(-1);
+							}
+						"
+						id="linkTo"
+					>
+						<h1 class="ml-3 text-gold negative">{{ backArrow }}</h1></a
 					>
 				</b-col>
 				<b-col cols="8" class="mx-auto text-center">
@@ -13,7 +20,9 @@
 					</h2>
 					<h2>{{ title }}</h2>
 				</b-col>
-				<b-col cols="2"> </b-col>
+				<b-col cols="2"
+					><h3><fa icon="house" /></h3
+				></b-col>
 			</b-row>
 		</b-container>
 	</div>

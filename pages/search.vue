@@ -8,15 +8,20 @@
 		/>
 		<input class="input" />
 		<div class="mt-4 mb-5 pb-5">
-			<user-single
+			<nuxt-link
 				v-for="(user, key) in users"
 				:key="key"
-				class="user-single"
-				:username="user.username"
-				:sunsign="user.signs.sun"
-				:moonsign="user.signs.moon"
-				:ascendsign="user.signs.ascending"
-			></user-single>
+				:to="`/users/${user._id}`"
+			>
+				<user-single
+					:key="key"
+					class="user-single"
+					:username="user.username"
+					:sunsign="user.signs.sun"
+					:moonsign="user.signs.moon"
+					:ascendsign="user.signs.ascending"
+				></user-single
+			></nuxt-link>
 		</div>
 		<navigation-mobile></navigation-mobile>
 	</div>
